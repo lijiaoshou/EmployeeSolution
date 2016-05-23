@@ -1,0 +1,31 @@
+﻿@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>RegistSuuceed</title>
+    <script src="~/Scripts/jquery-1.8.2.min.js"></script>
+    <script type="text/javascript">
+        
+        function Refresh()
+        {
+            $("#second").text($("#second").text() - 1);
+            if ($("#second").text() == 0)
+            {
+                window.top.location.href = "/Login/Index";
+            }
+        }
+        setInterval("Refresh()", 1000);
+    </script>
+</head>
+<body>
+    <div>
+       您的注册已成功，<label id="second">5</label> 秒后跳转到登录页面
+        <span id="loginRightNow"><a href="/Login/Index">立即登录</a></span>
+    </div>
+</body>
+</html>

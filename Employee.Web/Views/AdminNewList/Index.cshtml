@@ -1,0 +1,181 @@
+﻿@{
+    Layout = null;
+}
+@using Employee.Entity
+@using Employee.Common
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+    <link href="~/Content/tableStyle.css" rel="stylesheet" />
+    <link href="~/Content/pageBar.css" rel="stylesheet" />
+    <link href="~/Content/themes/default/easyui.css" rel="stylesheet" />
+    <link href="~/Content/themes/icon.css" rel="stylesheet" />
+    <script src="~/Scripts/jquery-1.8.2.min.js"></script>
+    <script src="~/Scripts/jquery.easyui.min.js"></script>
+    <script src="~/Scripts/easyui-lang-zh_CN.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            $("#detailDiv").css("display", "none");
+            $("#divAdd").css("display", "none");
+            $(".details").click(function () {
+                showDetail($(this).attr("ids"));//显示详细信息
+            });
+            $(".deletes").click(function () {
+                deleteInfo($(this).attr("ids"), $(this));
+            });
+            $("#addInfo").click(function () {
+                addNewInfo();
+            });
+        });
+        //添加新闻信息
+        function addNewInfo() {
+            $("#AddFrame").attr("src", "/AdminNewList/ShowAddInfo");
+            $("#divAdd").css("display", "block");
+            $('#divAdd').dialog({
+                modal: true,
+                resizable: true,
+                maximizable: true,
+                collapsible: true,
+                title: "添加新闻",
+                width: 700,
+                height: 400,
+                buttons: [{
+                    text: '确定',
+                    iconCls: 'icon-ok',
+                    handler: function () {
+                        //调用子窗体中的方法.
+                        var childWindow = $("#AddFrame")[0].contentWindow;//获取子窗体的window对象
+                        childWindow.subForm();
+                    }
+                }, {
+                    text: '取消',
+                    handler: function () {
+                        $('#divAdd').dialog('close');
+                    }
+                }]
+            });
+        }
+
+        //添加完成以后调用该方法关闭添加窗口
+        function afterAdd() {
+            $('#divAdd').dialog('close');
+        }
+
+        //删除新闻
+        function deleteInfo(id, control) {
+            $.messager.confirm("提示", "确定要删除该记录吗?", function (r) {
+                if (r) {//该条件成立表示删除该记录
+                    //发送异步请求.
+                    $.post("/AdminNewList/DeleteNewInfo", { "id": id }, function (data) {
+                        if (data == "ok") {
+                            $(control).parent().parent().remove();
+                            $.messager.alert("提示", "删除成功", "info");
+                        } else {
+                            $.messager.alert("提示", "删除失败", "info");
+                        }
+                    });
+                    //$.messager.show({
+                    //    title: '提示',
+                    //    msg: '恭喜删除成功!!',
+                    //    showType: 'show'
+                    //});
+
+                }
+            });
+        }
+        //显示详细信息
+        function showDetail(id) {
+            $.post("/AdminNewList/GetNewInfoModel", { "id": id }, function (data) {
+                $("#title").text(data.Title);
+                $("#author").text(data.Author);
+                $("#subDateTime").text(ChangeDateFormat(data.SubDateTime));
+                $("#msg").html(data.Msg);
+                $("#img").attr("src", data.ImagePath);
+            });
+            $("#detailDiv").css("display", "block");
+            $('#detailDiv').dialog({
+                modal: true,
+                resizable: true,
+                maximizable: true,
+                collapsible: true,
+                title: "新闻详细",
+                width: 400,
+                height: 300,
+                buttons: [{
+                    text: '确定',
+                    iconCls: 'icon-ok',
+                    handler: function () {
+                        $('#detailDiv').dialog('close');
+                    }
+                }, {
+                    text: '取消',
+                    handler: function () {
+                        $('#detailDiv').dialog('close');
+                    }
+                }]
+            });
+
+        }
+        //将序列化成json格式后日期(毫秒数)转成日期格式
+        function ChangeDateFormat(cellval) {
+            var date = new Date(parseInt(cellval.replace("/Date(", "").replace(")/", ""), 10));
+            var month = date.getMonth() + 1 < 10 ? "0" + (date.getMonth() + 1) : date.getMonth() + 1;
+            var currentDate = date.getDate() < 10 ? "0" + date.getDate() : date.getDate();
+            return date.getFullYear() + "-" + month + "-" + currentDate;
+        }
+
+    </script>
+</head>
+<body>
+    <div>
+        <a href="javascript:void(0)" id="addInfo">添加</a>
+        @if (ViewData["list"] != null)
+        {
+            <table width="100%">
+                <tr><th>编号</th><th>标题</th><th>作者</th><th>时间</th><th>详细</th><th>删除</th></tr>
+                @foreach (EmployeeNewInfo newInfo in (List<EmployeeNewInfo>)ViewData["list"])
+                {
+                    <tr>
+                        <td>@newInfo.Id</td>
+                        <td>@newInfo.Title</td>
+                        <td>@newInfo.Author</td>
+                        <td>@newInfo.SubDateTime</td>
+                        <td><a href="javascript:void(0)" class="details" ids="@newInfo.Id">详细</a></td>
+                        <td><a href="javascript:void(0)" class="deletes" ids="@newInfo.Id">删除</a></td>
+                    </tr>
+                }
+
+            </table>
+            <p class="page_nav">
+                @MvcHtmlString.Create(PageBar.GetPageBar((int)ViewData["pageIndex"], (int)ViewData["pageCount"]))
+            </p>
+        }
+        else
+        {
+            <span>暂无数据</span>
+        }
+
+
+    </div>
+    <!----------------显示详细信息内容------------------------>
+    <div id="detailDiv">
+        <table>
+            <tr><td>标题</td><td><span id="title"></span></td></tr>
+            <tr><td>作者</td><td><span id="author"></span> </td></tr>
+            <tr><td>时间</td><td><span id="subDateTime"></span></td></tr>
+            <tr><td>内容</td><td><span id="msg"></span></td></tr>
+            <tr><td>图片</td><td><span><img id="img"/></span></td></tr>
+        </table>
+    </div>
+
+    <!----------------显示详细信息内容结束------------------------>
+    <!----------------添加信息内容------------------------>
+    <div id="divAdd" style="overflow:hidden">
+        <iframe id="AddFrame" frameborder="0" width="100%" height="100%" scrolling="auto"></iframe>
+    </div>
+    <!----------------添加信息内容结束------------------------>
+</body>
+</html>
